@@ -1,0 +1,17 @@
+{
+  "gap_max_days": 60,
+  "cold_start_max_cycles": 1,
+  "cold_width_days": 6,
+  "alpha_irregular": 1.05,
+  "pop_median_next_len": 28.0,
+  "feature_cols": [
+    "len_lag1",
+    "len_lag2",
+    "len_lag3",
+    "len_roll_median3",
+    "len_roll_mean3",
+    "IsIrregular",
+    "range_mm_last6"
+  ],
+  "notes": "Gap-filtered quantile HistGB + irregular interval calibration"
+}
