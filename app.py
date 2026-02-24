@@ -109,6 +109,19 @@ def predict_range(starts, q10, q50, q90, cfg):
     }
     return out
 
+def calc_menses_lengths(period_ranges):
+    """
+    period_ranges: list of tuples (start_datetime, end_datetime) sorted by start
+    returns list of menses lengths in days (inclusive)
+    """
+    lengths = []
+    for s, e in period_ranges:
+        if s is None or e is None:
+            lengths.append(None)
+            continue
+        days = (e - s).days + 1
+        lengths.append(days if days > 0 else None)
+    return lengths
 # ---------- UI ----------
 q10, q50, q90, cfg = load_artifacts()
 
@@ -132,3 +145,33 @@ if st.button("Predict next period range"):
     st.success(f"Next start (median): {pred['p50_date']}")
     st.markdown(f"**Range (P10–P90):** {pred['p10_date']} → {pred['p90_date']}")
     st.caption(f"P10={pred['p10_days']:.1f} days, P50={pred['p50_days']:.1f}, P90={pred['p90_days']:.1f}")
+
+
+period_ranges = []
+
+n = st.number_input("How many periods to enter?", min_value=1, max_value=12, value=3, step=1)
+
+for i in range(int(n)):
+    with st.expander(f"Period #{i+1}", expanded=(i == 0)):
+        s = st.date_input("Start date", key=f"start_{i}")
+        e = st.date_input("End date", key=f"end_{i}")
+        start_dt = datetime.combine(s, datetime.min.time())
+        end_dt = datetime.combine(e, datetime.min.time())
+        if end_dt >= start_dt:
+            period_ranges.append((start_dt, end_dt))
+        else:
+            st.warning("End date must be on/after start date.")
+
+period_ranges = sorted(period_ranges, key=lambda x: x[0])
+starts = [s for s, _ in period_ranges]
+
+menses_lengths = calc_menses_lengths(period_ranges)
+
+st.subheader("🩸 Menses (bleeding) length")
+if any(x is not None for x in menses_lengths):
+    clean = [x for x in menses_lengths if x is not None]
+    st.write("Menses lengths (days):", clean)
+    st.write("Last menses length:", clean[-1])
+    st.write("Average menses length:", round(sum(clean)/len(clean), 2))
+else:
+    st.info("Enter start and end for at least one period to compute menses length.")
